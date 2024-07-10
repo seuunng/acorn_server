@@ -1,0 +1,266 @@
+package com.acorn.erp.domain.Customer.Controller;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.acorn.erp.domain.Customer.Entity.AgeGroup;
+import com.acorn.erp.domain.Customer.Entity.CustomerGrade;
+import com.acorn.erp.domain.Customer.Entity.CustomerInfo;
+import com.acorn.erp.domain.Customer.Entity.RegionGroup;
+import com.acorn.erp.domain.Customer.Repository.AgeGroupRepository;
+import com.acorn.erp.domain.Customer.Repository.CustomerInfoRepository;
+import com.acorn.erp.domain.Customer.Repository.RegionGroupRepository;
+import com.acorn.erp.domain.Customer.Service.CustomerDataService;
+import com.acorn.erp.domain.Customer.Service.GradeService;
+
+@RestController
+@RequestMapping("/api/customer")
+public class CustomerController {
+
+	@Autowired
+	private CustomerInfoRepository repository;
+	
+	@Autowired
+	private AgeGroupRepository ageRepository;
+	
+	@Autowired
+	private CustomerDataService service;
+	
+	@Autowired
+	private GradeService gradeService;
+	
+	@Autowired
+	private RegionGroupRepository regionRepository;
+	
+	@GetMapping("/getAllList")
+	public List<CustomerInfo> getAllList() {
+		List<CustomerInfo> users = repository.findAll();
+		System.out.println(users);
+		return users;
+	}
+	@PostMapping("/getAllList")
+	public Page<CustomerInfo> getAllPageInfo(Model model, Pageable pageable) {
+		Page<CustomerInfo> users = repository.findAll(pageable);
+		System.out.println(users);
+		return users;
+	}
+	@PostMapping("/add")
+	 public ResponseEntity<CustomerInfo> addCustomerInfo(@RequestBody CustomerInfo customer) {
+    		    
+       CustomerInfo savedCustomerInfo = repository.save(customer); 
+       
+       return  ResponseEntity.ok(savedCustomerInfo);
+            
+   }
+	@GetMapping("/searchKeyword")
+	public List<CustomerInfo> searchCustomerInfoByKeyword(@RequestParam("keyword")String keyword) {
+        return repository.searchCustomerInfoByKeyword(keyword);
+    }
+	@GetMapping("/searchPeriod")
+	public List<CustomerInfo> searchCustomerInfoByPeriod(
+		@RequestParam("startDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date startDate,
+		@RequestParam("endDate") @DateTimeFormat(pattern = "yyyy-MM-dd") Date endDate) {
+		
+		Calendar calendar = Calendar.getInstance();
+	    calendar.setTime(endDate);
+	    calendar.set(Calendar.HOUR_OF_DAY, 23);
+	    calendar.set(Calendar.MINUTE, 59);
+	    calendar.set(Calendar.SECOND, 59);
+	    calendar.set(Calendar.MILLISECOND, 999);
+	    endDate = calendar.getTime();
+	    
+        return repository.findByRegisterDateBetween(startDate, endDate);
+    }
+	
+	
+	@PutMapping("/info/{customerId}")
+	 public ResponseEntity<CustomerInfo> updateCustomerInfo(@PathVariable("customerId")  Integer customerId, @RequestBody CustomerInfo newInfo) {
+        return repository.findById(customerId)
+                .map(customer -> {
+                    customer.setCustomerName(newInfo.getCustomerName());
+                    customer.setCustomerGender(newInfo.getCustomerGender());
+                    customer.setCustomerBirthDate(newInfo.getCustomerBirthDate());
+                    customer.setCustomerAddr(newInfo.getCustomerAddr());
+                    customer.setCustomerTel(newInfo.getCustomerTel());
+                    customer.setRegisterDate(newInfo.getRegisterDate());
+                    
+                    repository.save(customer);
+                    
+                    return  ResponseEntity.ok(customer);
+                })
+                .orElseGet(() -> ResponseEntity.status(HttpStatus.NOT_FOUND).body(null));
+    }
+	@DeleteMapping("/delete/{customerId}")
+	 public ResponseEntity<?> deleteCustomerInfo(@PathVariable("customerId") Integer customerId) {
+		if (customerId == null) {
+            return ResponseEntity.badRequest().body("Customer ID cannot be null");
+        }
+       repository.deleteById(customerId);
+       return ResponseEntity.ok("Customer deleted successfully");
+   }
+	
+	@GetMapping("/getCountAll")
+	public int countAll() {
+		List<CustomerInfo> users = repository.findAll();
+		return users.size();
+	}
+
+	@GetMapping("/getCountLastyear")
+	public Long countLastyear(@RequestParam("year") int year) {
+		SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
+		Date endDate = null;
+		try {
+			endDate = dateFormat.parse(year + "-12-31");
+		} catch (ParseException e) {
+			e.printStackTrace();
+			return 0L;
+		}
+		try {
+			long count = repository.countCustomersLastyear(endDate);
+			return count;
+		} catch (Exception e) {
+			e.printStackTrace();
+			return 0L; // 예외 발생 시 0을 반환하거나 적절한 처리
+		}
+	}
+
+	@PostMapping("/getCountAll")
+	public Map<String, Map<String, Map<String, Map<String, Long>>>> countCustomerGroupBy() {
+	    List<CustomerInfo> customers = repository.findAll();
+	    System.out.println("countsByGenderAndGrade: 실행");
+
+	    // 성별 등급별로 구분해서 합계 구하기
+	    Map<Integer, String> customerGenderMap = customers.stream()
+	            .collect(Collectors.toMap(CustomerInfo::getCustomerId, customer -> {
+	                CustomerGrade grade = service.getGradeByCustomerId(customer.getCustomerId());
+	                return grade != null ? grade.getCustomerGrade() : "Unknown";
+	            }));
+
+	    Map<String, Map<String, Long>> countsByGenderAndGrade = customers.stream()
+	            .collect(Collectors.groupingBy(
+	                    customer -> Objects.toString(customer.getCustomerGender(), "Unknown"), 
+	                    Collectors.groupingBy(
+	                        customer -> customerGenderMap.getOrDefault(customer.getCustomerId(), "Unknown"),
+	                        Collectors.counting()
+	                    )
+	            ));
+
+	    // 연령별 등급별로 구분해서 합계 구하기
+	    List<AgeGroup> ageGroup = ageRepository.findAll();
+	    Map<Integer, String> customerAgeMap = customers.stream()
+	            .collect(Collectors.toMap(CustomerInfo::getCustomerId, customer -> {
+	                List<AgeGroup> ageGroups = ageRepository.findByCustomerId(customer.getCustomerId());
+	                return ageGroups != null && !ageGroups.isEmpty() ? ageGroups.get(0).getAgeGroup() : "Unknown";
+	            }));
+	    Map<Integer, String> customerGradeMap = customers.stream()
+	            .collect(Collectors.toMap(CustomerInfo::getCustomerId, customer -> {
+	                CustomerGrade grade = service.getGradeByCustomerId(customer.getCustomerId());
+	                return grade != null ? grade.getCustomerGrade() : "Unknown";
+	            }));
+
+	    Map<String, Map<String, Long>> countsByAgeAndGrade = customers.stream()
+	            .collect(Collectors.groupingBy(
+	                    customer -> customerAgeMap.getOrDefault(customer.getCustomerId(), "Unknown"),
+	                    Collectors.groupingBy(
+	                        customer -> customerGradeMap.getOrDefault(customer.getCustomerId(), "Unknown"),
+	                        Collectors.counting()
+	                    )
+	            ));
+
+	    // 지역별 등급별로 구분해서 합계 구하기
+	    List<RegionGroup> region = regionRepository.findAll();
+	    Map<Integer, Map<String, String>> customerRegionMap = customers.stream()
+	            .collect(Collectors.toMap(CustomerInfo::getCustomerId, customer -> {
+	                List<RegionGroup> regionGroups = regionRepository.findByCustomerId(customer.getCustomerId());
+	                if (regionGroups != null && !regionGroups.isEmpty()) {
+	                    RegionGroup regionObject = regionGroups.get(0);
+	                    Map<String, String> regionMap = new HashMap<>();
+	                    regionMap.put("province", Objects.toString(regionObject.getRegiongroupProvince(), "Unknown"));
+	                    regionMap.put("city", Objects.toString(regionObject.getRegiongroupCity(), "Unknown"));
+	                    regionMap.put("town", Objects.toString(regionObject.getRegiongroupTown(), "Unknown"));
+	                    return regionMap;
+	                } else {
+	                    Map<String, String> unknownMap = new HashMap<>();
+	                    unknownMap.put("province", "Unknown");
+	                    unknownMap.put("city", "Unknown");
+	                    unknownMap.put("town", "Unknown");
+	                    return unknownMap;
+	                }
+	            }));
+
+	    // 지역별 등급별 집계
+	    Map<String, Map<String, Long>> countsByRegionAndGrade = customers.stream()
+	            .collect(Collectors.groupingBy(
+	                    customer -> customerRegionMap.get(customer.getCustomerId()).getOrDefault("province", "Unknown"), 
+	                    Collectors.groupingBy(
+	                        customer -> customerGradeMap.getOrDefault(customer.getCustomerId(), "Unknown"),
+	                        Collectors.counting()
+	                    )
+	            ));
+
+	    // 시도별 집계
+	    Map<String, Map<String, Long>> countsByCityAndGrade = customers.stream()
+	            .collect(Collectors.groupingBy(
+	                    customer -> customerRegionMap.get(customer.getCustomerId()).getOrDefault("city", "Unknown"), 
+	                    Collectors.groupingBy(
+	                        customer -> customerGradeMap.getOrDefault(customer.getCustomerId(), "Unknown"),
+	                        Collectors.counting()
+	                    )
+	            ));
+
+	    // 시군구별 집계
+	    Map<String, Map<String, Long>> countsByTownAndGrade = customers.stream()
+	            .collect(Collectors.groupingBy(
+	                    customer -> customerRegionMap.get(customer.getCustomerId()).getOrDefault("town", "Unknown"), 
+	                    Collectors.groupingBy(
+	                        customer -> customerGradeMap.getOrDefault(customer.getCustomerId(), "Unknown"),
+	                        Collectors.counting()
+	                    )
+	            ));
+
+	    Map<String, Map<String, Map<String, Long>>> resultGenderAge = new HashMap<>();
+	    resultGenderAge.put("gender", countsByGenderAndGrade);
+	    resultGenderAge.put("age", countsByAgeAndGrade);
+
+	    Map<String, Map<String, Map<String, Long>>> regionResult = new HashMap<>();
+	    regionResult.put("Province", countsByRegionAndGrade);
+	    regionResult.put("City", countsByCityAndGrade);
+	    regionResult.put("Town", countsByTownAndGrade);
+
+	    Map<String, Map<String, Map<String, Map<String, Long>>>> result = new HashMap<>();
+	    result.put("genderAge", resultGenderAge);
+	    result.put("region", regionResult);
+
+	    return result;
+	}
+
+	// 기본등급 일괄 적용
+//	@PostConstruct
+//	public void init() {
+//		gradeService.applyDefaultGradeToExistingCustomers();
+//	}
+}
