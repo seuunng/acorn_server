@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.SessionAttributes;
 
-import com.acorn.erp.domain.Login.Entity.userInfo;
+import com.acorn.erp.domain.Login.Entity.UserInfo;
 import com.acorn.erp.domain.Login.Service.UserInfoService;
 
 //세션 추가
@@ -36,13 +36,13 @@ public class UserInfoController {
 	
 	
 	 @GetMapping
-	    public List<userInfo> getAllUserInfo() {
+	    public List<UserInfo> getAllUserInfo() {
 	        System.out.println("로그인!!!");
 	        return userInfoService.getAllUserInfo();
 	    }
 	
 	@PostMapping("/Login")
-	public String insertUserInfo(@RequestBody userInfo userinfo) {
+	public String insertUserInfo(@RequestBody UserInfo userinfo) {
 		userInfoService.insertUserInfo(userinfo);
 		System.out.println("추가실행");
 		return "Success";
@@ -56,16 +56,16 @@ public class UserInfoController {
 	}
 	
 	@PutMapping("/{email}")
-    public String updateExam(@RequestBody userInfo userinfo) {
+    public String updateExam(@RequestBody UserInfo userinfo) {
 		userInfoService.updateUserInfo(userinfo);
         return "성공";
     }
 	
 	//로그인 구현
 	@PostMapping("/signin")
-    public ResponseEntity<userInfo> login(@RequestParam("email") String email, @RequestParam("password") String password, HttpSession session) {
+    public ResponseEntity<UserInfo> login(@RequestParam("email") String email, @RequestParam("password") String password, HttpSession session) {
         System.out.println("로그인 시도: " + email);
-        userInfo userinfo = userInfoService.login(email, password);
+        UserInfo userinfo = userInfoService.login(email, password);
         if (userinfo != null) {
             System.out.println("성공");
             session.setAttribute("user", userinfo);
@@ -80,8 +80,8 @@ public class UserInfoController {
     // id 가져오기
     
     @GetMapping("/userinfo")
-    public ResponseEntity<userInfo> getUserInfo(HttpSession session) {
-        userInfo userinfo = (userInfo) session.getAttribute("user");
+    public ResponseEntity<UserInfo> getUserInfo(HttpSession session) {
+        UserInfo userinfo = (UserInfo) session.getAttribute("user");
         if (userinfo != null) {
             return ResponseEntity.ok(userinfo);
         } else {
@@ -100,8 +100,8 @@ public class UserInfoController {
 	
 	//현재 사용자 정보
 	@GetMapping("/current-user")
-    public userInfo getCurrentUser(HttpSession session) {
-        return (userInfo) session.getAttribute("userInfo");
+    public UserInfo getCurrentUser(HttpSession session) {
+        return (UserInfo) session.getAttribute("userInfo");
     }
 	
 	//토스트팝업 내 매장명 정보

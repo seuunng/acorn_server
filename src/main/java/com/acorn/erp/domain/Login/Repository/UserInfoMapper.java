@@ -18,27 +18,27 @@ import com.acorn.erp.domain.Login.Entity.*;
 public interface UserInfoMapper {
 	
 	 @Select("SELECT * FROM USERINFO")
-	    List<userInfo> getAllUserInfo();
+	    List<UserInfo> getAllUserInfo();
 	
 	 @Select("SELECT u FROM userinfo WHERE registrationNum = #{registrationNum} AND email = #{email}")
 	 String getFindPw(@Param("registrationNum") String registrationNum, @Param("email") String email);
 	
 	 @Select("SELECT * FROM userInfo where email = #{email}")
-	 userInfo getUserByEmail(String email);
+	 UserInfo getUserByEmail(String email);
 	 	
 	 
 	@Insert("insert into userInfo(email, password, shopName, registrationNum) values(#{email}, #{password}, #{shopName}, #{registrationNum})")
-	void insertUserInfo(userInfo userinfo); 
+	void insertUserInfo(UserInfo userinfo); 
 	
 	@Delete("DELETE FROM userinfo WHERE email =#{email}")
     void deleteUserInfo(String email);
 	
 	@Update("UPDATE userInfo SET password = #{password} WHERE email =#{email}")
-	void updateUserInfo(userInfo userinfo);
+	void updateUserInfo(UserInfo userinfo);
 	
 	//로그인 구현
 	@Select("SELECT * FROM USERINFO WHERE email = #{email} AND password = #{password}")
-    userInfo getUserByEmailAndPassword(@Param("email") String email, @Param("password") String password);
+    UserInfo getUserByEmailAndPassword(@Param("email") String email, @Param("password") String password);
 
 	
 	@Select("SELECT shopname from userInfo WHERE email =#{email}")
