@@ -15,8 +15,8 @@ import lombok.Data;
 @Table(name = "CUSTOMER_PREFERENCE_DATA")
 public class CustomerPreferenceData {
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_preference_data_seq")
-    @SequenceGenerator(name = "customer_preference_data_seq", sequenceName = "customer_preference_data_seq", allocationSize = 1)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+   //@SequenceGenerator(name = "customer_preference_data_seq", sequenceName = "customer_preference_data_seq", allocationSize = 1)
 	private int preferenceDataId;
 	private String itemName; //FK 변수명확인
 	private int totalAmountForProduct;

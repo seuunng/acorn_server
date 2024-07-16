@@ -18,8 +18,8 @@ uniqueConstraints = {@UniqueConstraint(columnNames = {"customerId", "notes"})}
 )
 public class CustomerNotes {
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "customer_notes_seq")
-    @SequenceGenerator(name = "customer_notes_seq", sequenceName = "customer_notes_seq", allocationSize = 1)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+    //@SequenceGenerator(name = "customer_notes_seq", sequenceName = "customer_notes_seq", allocationSize = 1)
 	private int notesId;
 	@Column(nullable = false)
 	private int customerId;

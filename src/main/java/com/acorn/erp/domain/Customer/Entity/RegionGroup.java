@@ -16,8 +16,8 @@ uniqueConstraints = {@UniqueConstraint(columnNames = {"customerId", "regiongroup
 )
 public class RegionGroup {
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "region_group_seq")
-    @SequenceGenerator(name = "region_group_seq", sequenceName = "region_group_seq", allocationSize = 1)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+    //@SequenceGenerator(name = "region_group_seq", sequenceName = "region_group_seq", allocationSize = 1)
 	private int regiongroupId;
 	@Column(nullable = false)
 	private int customerId;
