@@ -18,8 +18,9 @@ import lombok.Data;
 		)
 public class GenderGroup {
 	@Id
-	@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "gender_group_seq")
-    @SequenceGenerator(name = "gender_group_seq", sequenceName = "gender_group_seq", allocationSize = 1)
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	//@GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "gender_group_seq")
+    //@SequenceGenerator(name = "gender_group_seq", sequenceName = "gender_group_seq", allocationSize = 1)
 	private int agegroupId;
 	@Column(nullable = false)
 	private int customerId;

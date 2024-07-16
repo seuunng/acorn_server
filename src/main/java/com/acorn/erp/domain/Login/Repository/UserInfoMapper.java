@@ -18,7 +18,7 @@ import com.acorn.erp.domain.Login.Entity.*;
 public interface UserInfoMapper {
 	
 	 @Select("SELECT * FROM USERINFO")
-	    List<UserInfo> getAllUserInfo();
+	 List<UserInfo> getAllUserInfo();
 	
 	 @Select("SELECT u FROM userinfo WHERE registrationNum = #{registrationNum} AND email = #{email}")
 	 String getFindPw(@Param("registrationNum") String registrationNum, @Param("email") String email);
@@ -40,7 +40,6 @@ public interface UserInfoMapper {
 	@Select("SELECT * FROM USERINFO WHERE email = #{email} AND password = #{password}")
     UserInfo getUserByEmailAndPassword(@Param("email") String email, @Param("password") String password);
 
-	
 	@Select("SELECT shopname from userInfo WHERE email =#{email}")
 	 String getShopname(String email);
 	

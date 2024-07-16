@@ -2,6 +2,7 @@ plugins {
 	id 'java'
 	id 'org.springframework.boot' version '3.2.0'
 	id 'io.spring.dependency-management' version '1.1.5'
+	id 'application' 
 }
 
 group = 'com.acorn'
@@ -26,8 +27,8 @@ repositories {
 
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
-	implementation 'com.oracle.database.jdbc:ojdbc8:21.5.0.0'
-    implementation 'org.hibernate:hibernate-core:6.3.1.Final'
+	 implementation 'mysql:mysql-connector-java:8.0.33' // MySQL JDBC 드라이버
+	 implementation files('libs/mysql-connector-java-9.0.0.jar')
     
 	implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
@@ -36,11 +37,16 @@ dependencies {
     compileOnly 'org.projectlombok:lombok:1.18.24'
     annotationProcessor 'org.projectlombok:lombok:1.18.24'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
-	runtimeOnly 'com.oracle.database.jdbc:ojdbc11'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.9.3'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.9.3'
+}
+springBoot {
+   
+}
+application {
+    mainClass = 'com.acorn.erp.AcornServerApplication'
 }
 def webappDir = "$projectDir/src/main/acorn_erp"
 
@@ -52,14 +58,12 @@ sourceSets {
 	}
 }
 
-processResources {
-	dependsOn "buildReact"
-}
 
 task buildReact(type: Exec) {
 	dependsOn "installReact"
 	workingDir "$webappDir"
-	inputs.dir "$webappDir"
+	inputs.dir "$webappDir/src" // 리액트 소스 디렉토리 지정
+    outputs.dir "$webappDir/build" // 리액트 빌드 디렉토리 지정
 	group = BasePlugin.BUILD_GROUP
 		if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
 			commandLine "npm.cmd", "run-script", "build"
@@ -70,7 +74,8 @@ task buildReact(type: Exec) {
 
 task installReact(type: Exec) {
 	workingDir "$webappDir"
-	inputs.dir "$webappDir"
+	inputs.files "$webappDir/package.json", "$webappDir/package-lock.json" // 종속성 파일 지정
+    outputs.dir "$webappDir/node_modules" // 종속성 설치 디렉토리 지정
 	group = BasePlugin.BUILD_GROUP
 	if (System.getProperty('os.name').toLowerCase(Locale.ROOT).contains('windows')) {
 		commandLine "npm.cmd", "audit", "fix"
@@ -80,7 +85,15 @@ task installReact(type: Exec) {
 		commandLine 'npm', 'install'
 	}
 }
-
+processResources {
+	dependsOn "buildReact"
+	from("$webappDir/build") {
+        into 'static'
+    }
+}
+build {
+    dependsOn 'processResources'
+}
 test {
     useJUnitPlatform()
 }
